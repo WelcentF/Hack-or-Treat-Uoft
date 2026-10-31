@@ -1,0 +1,147 @@
+<!doctype html>
+<!-- Standalone preview for Ghostwriter moods and non-blocking tricks; open directly in a browser. -->
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Ghostwriter Mood Lab</title>
+    <style>
+      :root { color-scheme: dark; font-family: ui-rounded, "Avenir Next", system-ui, sans-serif; background: #171326; color: #f7f2ff; }
+      * { box-sizing: border-box; }
+      body { max-width: 1040px; margin: 0 auto; padding: 28px 20px 50px; }
+      header { margin-bottom: 20px; }
+      h1 { margin: 0; color: #f4eaff; font-size: clamp(26px, 5vw, 40px); }
+      header p { margin: 7px 0 0; color: #bbb0d3; }
+      .stage {
+        position: relative; display: grid; min-height: 390px; place-items: center; overflow: hidden;
+        border: 1px solid #49405e; border-radius: 22px;
+        background: radial-gradient(ellipse at 50% 45%, #34294a 0, #211b32 48%, #191527 78%);
+      }
+      .ghost-host { width: min(280px, 66vw); height: min(330px, 76vw); }
+      .stage-caption { position: absolute; bottom: 14px; color: #b7accb; font-size: 13px; }
+      .controls { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 8px; margin-top: 18px; }
+      button {
+        min-height: 40px; padding: 8px 11px; border: 1px solid #51466c; border-radius: 10px;
+        background: #2b2440; color: #f3edff; font: inherit; font-size: 13px; cursor: pointer;
+        transition: background 160ms ease, transform 160ms ease;
+      }
+      button:hover { transform: translateY(-2px); background: #40335d; }
+      button:focus-visible { outline: 3px solid #bca5ff; outline-offset: 2px; }
+      .actions { display: flex; flex-wrap: wrap; gap: 9px; margin-top: 16px; }
+      .actions button { background: #6249a5; }
+      .current { margin: 15px 0 0; color: #cbc1de; font-size: 13px; }
+      code { color: #e2d4ff; }
+      @media (prefers-reduced-motion: reduce) { button { transition: none; } }
+    </style>
+  </head>
+  <body>
+    <header>
+      <h1>Ghostwriter Mood Lab</h1>
+      <p>Click a mood. The ghost will judge you with a crossfade and several tasteful transformations.</p>
+    </header>
+    <main>
+      <div class="stage">
+        <div id="ghost-host" class="ghost-host" aria-label="Ghost mood preview"></div>
+        <p class="stage-caption">A grumpy reaper-editor. Mostly harmless.</p>
+      </div>
+      <div id="mood-buttons" class="controls" aria-label="Ghost moods"></div>
+      <div class="actions">
+        <button id="cycle" type="button">Cycle all moods</button>
+        <button id="speech-test" type="button">Speech bubble test</button>
+        <button id="trick-test" type="button">Trick me!</button>
+        <button id="continuous-flight" type="button">Start continuous flight</button>
+      </div>
+      <p id="current" class="current" role="status" aria-live="polite">Current mood: idle</p>
+    </main>
+    <script src="src/content/ghost.js"></script>
+    <script>
+      const moods = [
+        "idle", "bored", "sleepy", "suspicious", "happy", "smug", "impressed", "disgusted",
+        "angry", "furious", "sad", "scared", "possessed", "channeling", "excited", "mischievous"
+      ];
+      const host = document.querySelector("#ghost-host");
+      const shadow = host.attachShadow({ mode: "open" });
+      const styles = document.createElement("link");
+      styles.rel = "stylesheet";
+      styles.href = "src/content/ghost.css";
+      const root = document.createElement("div");
+      root.className = "demo-shadow-root";
+      root.style.cssText = "position:relative;width:100%;height:100%;display:grid;place-items:center;";
+      const ghost = document.createElement("div");
+      ghost.className = "ghost mood-idle";
+      const bubble = document.createElement("div");
+      bubble.className = "speech-bubble";
+      bubble.hidden = true;
+      root.append(ghost, bubble);
+      shadow.append(styles, root);
+      window.GhostwriterMood.init(ghost, bubble, () => ({ personality: "grumpy", sound: false }));
+
+      const buttonHost = document.querySelector("#mood-buttons");
+      const current = document.querySelector("#current");
+      for (const mood of moods) {
+        const button = document.createElement("button");
+        button.type = "button";
+        button.textContent = mood;
+        button.addEventListener("click", () => {
+          window.setMood(mood);
+          current.textContent = `Current mood: ${window.getMood()}`;
+        });
+        buttonHost.append(button);
+      }
+
+      let cycleTimer = 0;
+      document.querySelector("#cycle").addEventListener("click", () => {
+        window.clearInterval(cycleTimer);
+        let index = 0;
+        const cycleNext = () => {
+          const mood = moods[index];
+          window.setMood(mood, { duration: 0, say: false });
+          current.textContent = `Cycling: ${mood}`;
+          index += 1;
+          if (index >= moods.length) {
+            window.clearInterval(cycleTimer);
+            window.setMood("idle");
+            current.textContent = "Cycle complete. Current mood: idle";
+          }
+        };
+        cycleNext();
+        cycleTimer = window.setInterval(cycleNext, 1050);
+      });
+      document.querySelector("#speech-test").addEventListener("click", () => {
+        window.setMood(window.getMood(), { say: "A bubble test. I expect better prose next time." });
+      });
+      document.querySelector("#trick-test").addEventListener("click", async () => {
+        const tricks = ["fly-by", "hover", "peek"];
+        const trick = tricks[Math.floor(Math.random() * tricks.length)];
+        current.textContent = `Playing trick: ${trick}`;
+        await window.playTrick(trick, {
+          getWritingSpot: () => {
+            const rect = document.querySelector(".stage").getBoundingClientRect();
+            return { x: rect.left + rect.width / 2, y: rect.top + rect.height / 2 };
+          }
+        });
+        current.textContent = `Trick complete: ${trick}`;
+      });
+      const continuousFlightButton = document.querySelector("#continuous-flight");
+      continuousFlightButton.addEventListener("click", async () => {
+        if (window.GhostwriterMood.isFlightActive()) {
+          await window.GhostwriterMood.stopFlight();
+          continuousFlightButton.textContent = "Start continuous flight";
+          current.textContent = "Flight stopped. The ghost has returned to its corner.";
+          return;
+        }
+        continuousFlightButton.textContent = "Stop continuous flight";
+        current.textContent = "Continuous flight: the ghost is touring the stage.";
+        void window.GhostwriterMood.startFlight().finally(() => {
+          continuousFlightButton.textContent = "Start continuous flight";
+        });
+      });
+      document.addEventListener("keydown", () => {
+        if (!window.GhostwriterMood.isFlightActive()) void window.GhostwriterMood.cancelTrick(true);
+      }, true);
+      document.addEventListener("pointerdown", () => {
+        if (!window.GhostwriterMood.isFlightActive()) void window.GhostwriterMood.cancelTrick(true);
+      }, true);
+    </script>
+  </body>
+</html>

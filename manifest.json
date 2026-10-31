@@ -3,13 +3,22 @@
   "name": "Ghostwriter",
   "version": "1.0.0",
   "description": "A grumpy ghost editor haunting your Google Docs.",
-  "permissions": ["storage", "clipboardRead", "clipboardWrite", "activeTab"],
-  "host_permissions": ["https://docs.google.com/*", "https://api.example.com/*"],
+  "permissions": ["storage", "clipboardRead", "clipboardWrite", "activeTab", "identity"],
+  "host_permissions": ["https://docs.google.com/*", "https://docs.googleapis.com/*", "https://api.example.com/*"],
+  "oauth2": {
+    "client_id": "49547483074-mlqua88rf3vdl9b117qkakl30njj4dfr.apps.googleusercontent.com",
+    "scopes": ["https://www.googleapis.com/auth/documents"]
+  },
   "background": {
     "service_worker": "src/background/service-worker.js"
   },
   "action": {
     "default_title": "Ghostwriter",
+    "default_icon": {
+      "16": "icons/icon16.png",
+      "48": "icons/icon48.png",
+      "128": "icons/icon128.png"
+    },
     "default_popup": "src/popup/popup.html"
   },
   "options_page": "src/options/options.html",
@@ -28,8 +37,6 @@
       "js": [
         "src/content/ghost.js",
         "src/content/features/cursed-words.js",
-        "src/content/features/possession.js",
-        "src/content/features/seance.js",
         "src/content/content.js"
       ],
       "run_at": "document_idle"
@@ -37,7 +44,12 @@
   ],
   "web_accessible_resources": [
     {
-      "resources": ["src/content/widget.css"],
+      "resources": [
+        "src/content/widget.css",
+        "src/content/ghost.css",
+        "assets/ghost/*.png",
+        "assets/effects/*.png"
+      ],
       "matches": ["https://docs.google.com/*"]
     }
   ],

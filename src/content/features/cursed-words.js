@@ -4,7 +4,7 @@
   const CURSED_WORDS = [
     "in order to", "at the end of the day", "think outside the box", "game changer",
     "very", "really", "just", "basically", "actually", "literally", "quite", "somewhat",
-    "things", "stuff", "a lot", "nice", "good", "bad", "thing is", "needless to say"
+    "things", "stuff", "a lot", "thing is", "needless to say"
   ];
 
   const LOCAL_SUGGESTIONS = {
@@ -23,9 +23,6 @@
     "at the end of the day": ["ultimately", "in the end", "remove it"],
     "think outside the box": ["rethink the approach", "explore alternatives", "challenge assumptions"],
     "game changer": ["major shift", "breakthrough", "turning point"],
-    nice: ["thoughtful", "effective", "elegant"],
-    good: ["effective", "strong", "valuable"],
-    bad: ["harmful", "ineffective", "weak"],
     "thing is": ["the point is", "however", "remove it"],
     "needless to say": ["remove it", "clearly", "of course"]
   };

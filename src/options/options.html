@@ -38,16 +38,22 @@
           <option value="sarcastic">Sarcastic</option>
         </select>
 
-        <label for="difficulty">Judgment difficulty</label>
-        <select id="difficulty" name="difficulty">
-          <option value="friendly">Friendly Ghost — gentle, fewer flags</option>
-          <option value="poltergeist">Poltergeist — brutal, more sensitive</option>
-        </select>
-
         <div class="check-row">
           <input id="sound" name="sound" type="checkbox">
           <label for="sound">Allow tiny synthesized ghost noises (muted by default)</label>
         </div>
+
+        <div class="check-row">
+          <input id="tricks" name="tricks" type="checkbox">
+          <label for="tricks">Let me wander, hover, and occasionally inspect your page (enabled by default)</label>
+        </div>
+
+        <label for="trick-frequency">How often I haunt the page</label>
+        <select id="trick-frequency" name="trickFrequency">
+          <option value="rare">Rare — 90–120 seconds</option>
+          <option value="normal">Normal — 45–120 seconds</option>
+          <option value="chaotic">Chaotic — 45–70 seconds</option>
+        </select>
 
         <button type="submit">Save my haunting preferences</button>
       </form>
