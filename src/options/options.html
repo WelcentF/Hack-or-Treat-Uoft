@@ -1,0 +1,58 @@
+<!doctype html>
+<!-- Saves Ghostwriter's API key and haunting preferences in Chrome sync storage. -->
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Ghostwriter Settings</title>
+    <style>
+      :root { color-scheme: light; font-family: ui-rounded, "Avenir Next", system-ui, sans-serif; color: #29243b; background: #f7f5fc; }
+      body { max-width: 620px; margin: 42px auto; padding: 0 18px; }
+      main { padding: 28px; border: 1px solid #e1dced; border-radius: 16px; background: #fff; box-shadow: 0 10px 32px rgb(46 32 91 / 9%); }
+      h1 { margin: 0; color: #382d61; font-size: 24px; }
+      .intro, .hint { color: #716a82; font-size: 13px; line-height: 1.5; }
+      label { display: block; margin: 19px 0 7px; color: #514968; font-size: 13px; font-weight: 700; }
+      input[type="password"], select { box-sizing: border-box; width: 100%; min-height: 41px; padding: 8px 10px; border: 1px solid #d5cfe3; border-radius: 8px; background: #fff; color: #302a43; font: inherit; }
+      .check-row { display: flex; align-items: flex-start; gap: 9px; margin-top: 21px; }
+      .check-row input { margin-top: 3px; accent-color: #5944a4; }
+      .check-row label { margin: 0; line-height: 1.45; }
+      button { min-height: 41px; margin-top: 23px; padding: 0 17px; border: 0; border-radius: 8px; background: #5944a4; color: #fff; font: inherit; font-weight: 750; cursor: pointer; }
+      #status { min-height: 19px; margin: 13px 0 0; color: #625779; font-size: 12px; }
+      .hint { margin: 7px 0 0; font-size: 11px; }
+      code { color: #57438f; }
+    </style>
+  </head>
+  <body>
+    <main>
+      <h1>Ghostwriter's lair</h1>
+      <p class="intro">Adjust my temperament. I promise to use this power only for prose.</p>
+      <form id="settings-form">
+        <label for="api-key">API key (optional; local features still work without it)</label>
+        <input id="api-key" name="apiKey" type="password" autocomplete="off" spellcheck="false" placeholder="A key for the spirit realm">
+        <p class="hint">Stored in chrome.storage.sync. Configure endpoint and model in <code>src/background/service-worker.js</code>.</p>
+
+        <label for="personality">Ghost personality</label>
+        <select id="personality" name="personality">
+          <option value="grumpy">Grumpy (default)</option>
+          <option value="sweet">Sweet</option>
+          <option value="sarcastic">Sarcastic</option>
+        </select>
+
+        <label for="difficulty">Judgment difficulty</label>
+        <select id="difficulty" name="difficulty">
+          <option value="friendly">Friendly Ghost — gentle, fewer flags</option>
+          <option value="poltergeist">Poltergeist — brutal, more sensitive</option>
+        </select>
+
+        <div class="check-row">
+          <input id="sound" name="sound" type="checkbox">
+          <label for="sound">Allow tiny synthesized ghost noises (muted by default)</label>
+        </div>
+
+        <button type="submit">Save my haunting preferences</button>
+      </form>
+      <p id="status" role="status" aria-live="polite"></p>
+    </main>
+    <script src="options.js"></script>
+  </body>
+</html>

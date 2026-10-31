@@ -1,0 +1,27 @@
+<!doctype html>
+<!-- Gives the user a tiny way to summon or dismiss the haunting and open its settings. -->
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Ghostwriter</title>
+    <style>
+      :root { color-scheme: light; font-family: ui-rounded, "Avenir Next", system-ui, sans-serif; color: #29243b; }
+      body { width: 250px; margin: 0; padding: 16px; }
+      h1 { margin: 0 0 5px; color: #382d61; font-size: 16px; }
+      p { color: #716a82; font-size: 11px; line-height: 1.4; }
+      button { width: 100%; min-height: 38px; border: 0; border-radius: 8px; font: inherit; font-size: 12px; font-weight: 750; cursor: pointer; }
+      #toggle { margin-top: 9px; background: #5944a4; color: #fff; }
+      #options { margin-top: 8px; background: #f0edfc; color: #51427e; }
+      #status { min-height: 16px; margin-bottom: 0; }
+    </style>
+  </head>
+  <body>
+    <h1>Ghostwriter</h1>
+    <p>Writing editor. Recently deceased.</p>
+    <button id="toggle" type="button">Summoning…</button>
+    <button id="options" type="button">Adjust my temperament</button>
+    <p id="status" role="status" aria-live="polite"></p>
+    <script src="popup.js"></script>
+  </body>
+</html>

@@ -1,0 +1,49 @@
+{
+  "manifest_version": 3,
+  "name": "Ghostwriter",
+  "version": "1.0.0",
+  "description": "A grumpy ghost editor haunting your Google Docs.",
+  "permissions": ["storage", "clipboardRead", "clipboardWrite", "activeTab"],
+  "host_permissions": ["https://docs.google.com/*", "https://api.example.com/*"],
+  "background": {
+    "service_worker": "src/background/service-worker.js"
+  },
+  "action": {
+    "default_title": "Ghostwriter",
+    "default_popup": "src/popup/popup.html"
+  },
+  "options_page": "src/options/options.html",
+  "commands": {
+    "open-writing-assistant": {
+      "description": "Summon Ghostwriter and capture selected text",
+      "suggested_key": {
+        "default": "Ctrl+Shift+Y",
+        "mac": "Command+Shift+Y"
+      }
+    }
+  },
+  "content_scripts": [
+    {
+      "matches": ["https://docs.google.com/document/*"],
+      "js": [
+        "src/content/ghost.js",
+        "src/content/features/cursed-words.js",
+        "src/content/features/possession.js",
+        "src/content/features/seance.js",
+        "src/content/content.js"
+      ],
+      "run_at": "document_idle"
+    }
+  ],
+  "web_accessible_resources": [
+    {
+      "resources": ["src/content/widget.css"],
+      "matches": ["https://docs.google.com/*"]
+    }
+  ],
+  "icons": {
+    "16": "icons/icon16.png",
+    "48": "icons/icon48.png",
+    "128": "icons/icon128.png"
+  }
+}
