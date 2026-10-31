@@ -31,6 +31,23 @@
       .actions button { background: #6249a5; }
       .current { margin: 15px 0 0; color: #cbc1de; font-size: 13px; }
       code { color: #e2d4ff; }
+      .report-demo { margin-top: 34px; }
+      .report-demo h2 { margin: 0; color: #f4eaff; font-size: 21px; }
+      .report-demo > p { margin: 7px 0 14px; color: #bbb0d3; font-size: 13px; }
+      .doc-window { overflow: hidden; border: 1px solid #49405e; border-radius: 14px; background: #e8e7ed; color: #282534; box-shadow: 0 14px 36px rgb(0 0 0 / 22%); }
+      .doc-toolbar { display: flex; align-items: center; gap: 10px; min-height: 48px; padding: 0 16px; background: #f7f6fa; border-bottom: 1px solid #d6d3dd; color: #615d6b; font-size: 12px; }
+      .doc-dot { width: 9px; height: 9px; border-radius: 50%; background: #68a878; box-shadow: 15px 0 #e7bd60, 30px 0 #d97474; margin-right: 28px; }
+      .doc-name { font-weight: 650; color: #383443; }
+      .doc-status { margin-left: auto; color: #85808e; }
+      .doc-workspace { padding: clamp(16px, 4vw, 36px); background: #e8e7ed; }
+      .report-page { max-width: 700px; min-height: 640px; margin: auto; padding: clamp(28px, 7vw, 66px) clamp(24px, 9vw, 86px); background: #fff; box-shadow: 0 2px 8px rgb(35 30 48 / 14%); font-family: Georgia, "Times New Roman", serif; line-height: 1.65; }
+      .report-kicker { margin: 0 0 7px; color: #716b82; font: 700 10px/1.4 system-ui, sans-serif; letter-spacing: .12em; text-transform: uppercase; }
+      .report-page h3 { margin: 0 0 8px; color: #24212b; font-size: clamp(20px, 4vw, 27px); line-height: 1.2; text-align: center; }
+      .report-meta { margin: 0 0 29px; color: #706b78; font: 12px/1.6 system-ui, sans-serif; text-align: center; }
+      .report-page h4 { margin: 22px 0 5px; color: #292632; font: 700 14px/1.4 system-ui, sans-serif; }
+      .report-page p { margin: 0 0 10px; font-size: 14px; }
+      .report-draft { padding: 10px 12px; border-left: 3px solid #47c9e8; background: #f2fbfd; }
+      .demo-note { margin-top: 10px; color: #807a8d; font-size: 11px; }
       @media (prefers-reduced-motion: reduce) { button { transition: none; } }
     </style>
   </head>
@@ -52,6 +69,41 @@
         <button id="continuous-flight" type="button">Start continuous flight</button>
       </div>
       <p id="current" class="current" role="status" aria-live="polite">Current mood: idle</p>
+
+      <section class="report-demo" aria-labelledby="report-title">
+        <h2 id="report-title">Lab report writing sample</h2>
+        <p>A Docs-style mockup with a deliberately rough results paragraph. Use it as your sample text when demoing Cursed words in a real Google Doc.</p>
+        <div class="doc-window">
+          <div class="doc-toolbar" aria-hidden="true">
+            <span class="doc-dot"></span>
+            <span class="doc-name">Biology Lab Report — Seedling Growth</span>
+            <span class="doc-status">All changes saved</span>
+          </div>
+          <div class="doc-workspace">
+            <article class="report-page">
+              <p class="report-kicker">Biology · Plant Growth Investigation</p>
+              <h3>The Effect of Light Intensity on Seedling Growth</h3>
+              <p class="report-meta">Student: Alex Morgan &nbsp;·&nbsp; Lab section: 03 &nbsp;·&nbsp; October 31, 2026</p>
+
+              <h4>Abstract</h4>
+              <p>This experiment examined whether light intensity affects the growth of radish seedlings. After 14 days, seedlings grown under high light had a greater mean height than seedlings grown under low light. The observations suggest that light availability influenced growth under the conditions tested.</p>
+
+              <h4>Introduction</h4>
+              <p>Plants use light energy for photosynthesis, which supports the production of sugars needed for growth. If light is limited, seedlings may grow more slowly. This investigation compared seedling growth in two light conditions while keeping water, soil, and observation time consistent.</p>
+
+              <h4>Methods</h4>
+              <p>Ten radish seeds were divided evenly between high- and low-light groups. Each seed was planted in the same type and volume of potting soil. Both groups received 20 mL of water daily and were kept at room temperature. Seedling height was measured from the soil surface to the tip of the tallest leaf every two days for 14 days.</p>
+
+              <h4>Results</h4>
+              <p class="report-draft">Seedlings in the high-light group grew very steadily over the 14-day trial. Their average final height was 8.2 cm, compared with 5.4 cm in the low-light group. The difference was really noticeable after day 7, when high-light plants had developed more leaves. Basically, the results suggest that increased light exposure supported seedling growth under the conditions tested.</p>
+
+              <h4>Discussion</h4>
+              <p>The greater mean height in the high-light group is consistent with the prediction that increased light availability supports plant growth. However, the small sample size and short observation period limit how broadly these findings can be applied. Future trials could include more seeds and measure leaf area as well as height.</p>
+              <p class="demo-note">Illustrative sample data for demonstration; not results from an actual experiment.</p>
+            </article>
+          </div>
+        </div>
+      </section>
     </main>
     <script src="src/content/ghost.js"></script>
     <script>

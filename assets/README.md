@@ -42,3 +42,7 @@ Add these transparent PNGs under `effects/` to replace the built-in CSS/inline-a
 Keep the smoke asset cropped to the pencil-tip wisp, since it is layered over the pencil on every mood.
 
 When adding artwork, add the new mood name to `AVAILABLE_MOODS` or effect name to `AVAILABLE_EFFECTS` in `src/content/ghost.js`. The CSS fallback stays available if the listed file later fails to load.
+
+## Sound
+
+- `sounds/ghost-woo.mp3` — plays when **Replace in Doc** is clicked.

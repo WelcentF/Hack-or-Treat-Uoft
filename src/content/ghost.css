@@ -61,10 +61,14 @@
 }
 .trick-trail-1 { animation-delay: 100ms; }
 .trick-trail-2 { animation-delay: 200ms; }
-.trick-trail img { width: 100%; height: 100%; object-fit: contain; opacity: .24; }
-.trick-trail-0 { --trail-distance: 10px; }
-.trick-trail-1 { --trail-distance: 19px; }
-.trick-trail-2 { --trail-distance: 28px; }
+.trick-trail-3 { animation-delay: 300ms; }
+.trick-trail-4 { animation-delay: 400ms; }
+.trick-trail img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  opacity: .13;
+}
 .ghost-face {
   object-fit: contain;
   opacity: 0;
@@ -316,7 +320,7 @@
 
 @keyframes ghost-idle-float { 0%, 100% { transform: translate(0, 0) rotate(-1deg); } 50% { transform: translate(2px, -7px) rotate(1deg); } }
 @keyframes trick-trail-fade {
-  0% { opacity: .4; transform: translateX(var(--trail-start, 10px)); }
+  0% { opacity: .8; transform: translateX(var(--trail-start, 10px)); }
   100% { opacity: 0; transform: translateX(var(--trail-end, 20px)); }
 }
 @keyframes trick-smoke-stream {

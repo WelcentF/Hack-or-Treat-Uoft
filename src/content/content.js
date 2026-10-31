@@ -1,4 +1,4 @@
-// Mounts the Cursed words editor in an isolated Shadow DOM; selection is clipboard-based.
+// Mounts the Cursed words editor in an isolated Shadow DOM; text is provided by paste or typing.
 
 (() => {
   const ROOT_ID = "ghostwriter-extension-root";
@@ -24,7 +24,6 @@
   let capturedText = "";
   let replaceResult = "";
   let hasReplaceResult = false;
-  let capturedSelectionBounds = null;
   let replacementRunning = false;
   let lastActivity = Date.now();
   let currentEvaluatedMood = null;
@@ -48,33 +47,9 @@
     return node;
   }
 
-  function getSelectionBounds() {
-    try {
-      const selection = window.getSelection();
-      if (selection?.rangeCount) {
-        const rect = selection.getRangeAt(0).getBoundingClientRect();
-        if (rect.width > 0 && rect.height > 0) {
-          return { left: rect.left, top: rect.top, width: rect.width, height: rect.height };
-        }
-      }
-    } catch { /* Docs may not expose a DOM selection for its canvas-rendered text. */ }
-
-    for (const selector of [".kix-cursor", ".kix-cursor-caret"]) {
-      try {
-        const rect = document.querySelector(selector)?.getBoundingClientRect();
-        if (rect && (rect.width > 0 || rect.height > 0)) {
-          return { left: rect.left, top: rect.top, width: rect.width, height: rect.height };
-        }
-      } catch { /* Docs' private cursor markup can change. */ }
-    }
-    return null;
-  }
-
   function playSmokeEffect() {
-    const anchor = capturedSelectionBounds || (() => {
-      const rect = app.output.getBoundingClientRect();
-      return { left: rect.left, top: rect.top, width: rect.width, height: rect.height };
-    })();
+    const rect = app.output.getBoundingClientRect();
+    const anchor = { left: rect.left, top: rect.top, width: rect.width, height: rect.height };
     const effect = element("div", "smoke-effect");
     effect.setAttribute("aria-hidden", "true");
     const width = Math.min(Math.max(anchor.width, 120), Math.min(360, window.innerWidth - 24));
@@ -127,10 +102,13 @@
     header.append(headingBlock, close);
 
     const moodRow = element("div", "mood-row");
-    moodRow.append(element("span", "", "Ghostly disapproval"), element("div", "mood-track"));
+    moodRow.append(element("span", "", "Ghost approval"), element("div", "mood-track"));
     const meter = element("span", "mood-fill");
+    meter.setAttribute("role", "meter");
+    meter.setAttribute("aria-label", "Ghost approval");
+    meter.setAttribute("aria-valuemin", "0");
+    meter.setAttribute("aria-valuemax", "100");
     moodRow.querySelector(".mood-track").append(meter);
-    const capture = button("Copy my selected text", "secondary-button capture-button");
     const textLabel = element("label", "field-label", "Text to check or edit");
     textLabel.htmlFor = "ghostwriter-source";
     const source = element("textarea", "source-text");
@@ -148,10 +126,8 @@
     cursedToolbar.append(element(
       "p",
       "section-intro",
-      "Fog clouds mark filler words. Exorcism removes those phrases from this text and tries to apply the result to your Doc."
+      "Fog clouds mark filler words. Choose a suggestion or edit the passage, then send your revision to the Doc."
     ));
-    const exorcism = button("Exorcise filler words", "secondary-button exorcism-button");
-    cursedToolbar.append(exorcism);
     const cursedView = element("div", "cursed-view");
     cursedView.setAttribute("aria-label", "Text with locally detected filler words fogged");
     cursedSection.append(cursedToolbar, cursedView);
@@ -165,24 +141,26 @@
     const editDisclaimer = element(
       "p",
       "edit-disclaimer",
-      "Review the revision, then choose Replace in Doc to update the captured passage. Replacement requires one unique match."
+      "Review the revision, then choose Exorcise words to update the captured passage. Replacement requires one unique match."
     );
     const footer = element("footer", "panel-footer");
     const copy = button("Copy result", "primary-button copy-button");
     copy.disabled = true;
-    const replace = button("Replace in Doc", "secondary-button replace-button");
+    const replace = button("Exorcise words", "secondary-button replace-button");
     replace.disabled = true;
-    footer.append(copy, replace, button("Close", "text-button footer-close"));
+    footer.append(copy, button("Close", "text-button footer-close"), replace);
 
-    panel.append(header, moodRow, capture, textLabel, source, status,
+    panel.append(header, moodRow, textLabel, source, status,
       cursedSection, outputLabel, output, editDisclaimer, footer);
     root.append(summon, bubble, panel);
     shadow.append(root);
     document.documentElement.append(host);
     app = {
       host, shadow, root, ghost, bubble, summon, panel, meter, source, status,
-      cursedSection, cursedView, output, copy, replace, exorcism
+      cursedSection, cursedView, output, copy, replace
     };
+    app.replaceSound = new Audio(chrome.runtime.getURL("assets/sounds/ghost-woo.mp3"));
+    app.replaceSound.preload = "auto";
     window.GhostwriterMood.init(ghost, bubble, () => settings);
     bindEvents();
     setupTrick();
@@ -202,6 +180,75 @@
     app.status.textContent = message;
   }
 
+  function renderRevision(text) {
+    const outputTokens = text.match(/\s+|[\p{L}\p{N}'’-]+|[^\s\p{L}\p{N}'’-]+/gu) || [];
+    const originalTokens = capturedText.match(/\s+|[\p{L}\p{N}'’-]+|[^\s\p{L}\p{N}'’-]+/gu) || [];
+    const columns = outputTokens.length + 1;
+    const cellCount = (originalTokens.length + 1) * columns;
+    const changed = new Uint8Array(outputTokens.length);
+
+    if (cellCount <= 400_000) {
+      const lcs = new Uint32Array(cellCount);
+      for (let originalIndex = originalTokens.length - 1; originalIndex >= 0; originalIndex -= 1) {
+        const row = originalIndex * columns;
+        const nextRow = row + columns;
+        for (let outputIndex = outputTokens.length - 1; outputIndex >= 0; outputIndex -= 1) {
+          lcs[row + outputIndex] = originalTokens[originalIndex] === outputTokens[outputIndex]
+            ? lcs[nextRow + outputIndex + 1] + 1
+            : Math.max(lcs[nextRow + outputIndex], lcs[row + outputIndex + 1]);
+        }
+      }
+
+      let originalIndex = 0;
+      let outputIndex = 0;
+      while (outputIndex < outputTokens.length) {
+        if (originalIndex < originalTokens.length
+          && originalTokens[originalIndex] === outputTokens[outputIndex]) {
+          originalIndex += 1;
+          outputIndex += 1;
+        } else if (originalIndex < originalTokens.length
+          && (outputIndex === outputTokens.length
+            || lcs[(originalIndex + 1) * columns + outputIndex] >= lcs[originalIndex * columns + outputIndex + 1])) {
+          originalIndex += 1;
+        } else {
+          changed[outputIndex] = 1;
+          outputIndex += 1;
+        }
+      }
+    } else {
+      let prefix = 0;
+      while (prefix < originalTokens.length && prefix < outputTokens.length
+        && originalTokens[prefix] === outputTokens[prefix]) prefix += 1;
+      let suffix = 0;
+      while (suffix < originalTokens.length - prefix && suffix < outputTokens.length - prefix
+        && originalTokens[originalTokens.length - suffix - 1] === outputTokens[outputTokens.length - suffix - 1]) suffix += 1;
+      for (let index = prefix; index < outputTokens.length - suffix; index += 1) changed[index] = 1;
+    }
+
+    app.output.replaceChildren();
+    let index = 0;
+    while (index < outputTokens.length) {
+      const isChanged = changed[index] === 1;
+      let end = index + 1;
+      while (end < outputTokens.length && (changed[end] === 1) === isChanged) end += 1;
+      const textNode = outputTokens.slice(index, end).join("");
+      if (isChanged) app.output.append(element("span", "revision-changed", textNode));
+      else app.output.append(document.createTextNode(textNode));
+      index = end;
+    }
+  }
+
+  function playReplaceSound() {
+    try {
+      app.replaceSound.currentTime = 0;
+      void app.replaceSound.play().catch((error) => {
+        console.warn("Ghostwriter could not play the replacement sound.", error);
+      });
+    } catch (error) {
+      console.warn("Ghostwriter could not start the replacement sound.", error);
+    }
+  }
+
   function noteActivity() {
     lastActivity = Date.now();
     resetIdle();
@@ -218,13 +265,17 @@
 
   function setMeter(score) {
     const bounded = Math.max(0, Math.min(100, Math.round(score)));
-    app.meter.style.width = `${bounded}%`;
-    app.meter.dataset.level = bounded > 68 ? "high" : bounded > 35 ? "medium" : "low";
+    const ratio = bounded / 100;
+    const hue = Math.round(5 + 115 * ratio);
+    const saturation = Math.round(45 + 26 * ratio);
+    const lightness = Math.round(45 + 15 * ratio);
+    app.meter.style.setProperty("--mood-color", `hsl(${hue} ${saturation}% ${lightness}%)`);
+    app.meter.setAttribute("aria-valuenow", String(bounded));
   }
 
   function evaluateMood(cursedDensity) {
-    const combined = Math.min(100, cursedDensity * 280);
-    setMeter(combined);
+    const disapproval = Math.min(100, cursedDensity * 2500);
+    setMeter(100 - disapproval);
     const threshold = 0.2;
     let targetMood;
     if (cursedDensity >= threshold * 1.65) {
@@ -247,7 +298,7 @@
     app.cursedView.replaceChildren();
     if (!text.trim()) {
       app.cursedView.append(element("p", "empty-state", "No text to haunt yet. Select a passage or paste it above."));
-      setMeter(0);
+      setMeter(100);
       return;
     }
     let cursor = 0;
@@ -296,10 +347,10 @@
         replaceResult = capturedText.trim() ? app.source.value : "";
         hasReplaceResult = true;
         app.copy.disabled = !lastOutput;
-        app.output.textContent = lastOutput;
+        renderRevision(lastOutput);
         container.classList.add("puff-out");
         window.setMood("smug");
-        setStatus("Suggestion preview updated. Review it, then choose Replace in Doc to apply it.");
+        setStatus("Suggestion preview updated. Review it, then choose Exorcise words to apply it in Docs.");
         window.setTimeout(renderCursed, 280);
         updateReplaceButton();
       });
@@ -342,51 +393,6 @@
     }
   }
 
-  async function exorciseAll() {
-    if (replacementRunning) return;
-    const text = app.source.value;
-    const matches = LOCAL_SUGGESTIONS.analyze(text).matches;
-    if (!matches.length) {
-      if (capturedText.trim() && text !== capturedText) {
-        replaceResult = text;
-        hasReplaceResult = true;
-        lastOutput = text;
-        app.output.textContent = text;
-        app.copy.disabled = !text;
-        updateReplaceButton();
-        setStatus("No filler words found. Review your edited text, then choose Replace in Doc.");
-        return;
-      }
-      if (!capturedText.trim() && text.trim()) {
-        setStatus("No cursed words found, and I do not have the original Doc text to replace. Copy the original selection into Ghostwriter before editing it.");
-        window.setMood("sad", { say: false });
-        return;
-      }
-      setStatus("Nothing cursed found. My work here is, tragically, done.");
-      window.setMood("happy");
-      return;
-    }
-    app.panel.classList.add("scratch-effect");
-    for (const match of [...matches].reverse()) {
-      app.source.value = LOCAL_SUGGESTIONS.replaceRange(app.source.value, match.start, match.end, "");
-    }
-    app.source.value = app.source.value.replace(/[ \t]{2,}/g, " ").replace(/\s+([,.!?;:])/g, "$1");
-    openFog.clear();
-    lastOutput = app.source.value;
-    replaceResult = lastOutput;
-    hasReplaceResult = true;
-    app.output.textContent = lastOutput;
-    app.copy.disabled = !lastOutput;
-    updateReplaceButton();
-    window.setMood("smug");
-    window.setTimeout(() => app.panel.classList.remove("scratch-effect"), 750);
-    renderCursed();
-    updateReplaceButton();
-    setStatus(capturedText.trim()
-      ? "Filler words removed from the preview. Review it, then choose Replace in Doc."
-      : "Filler words removed from the preview. Capture the original passage to replace it in Docs.");
-  }
-
   async function copyOutput() {
     if (!lastOutput) {
       setStatus("There is nothing to copy. My judgment is not a clipboard.");
@@ -409,10 +415,10 @@
     app.replace.title = !hasOriginal
       ? "Capture the original passage from Docs first."
       : !hasReplacement
-        ? "Choose a suggestion, exorcise filler words, or edit the captured text first."
+        ? "Choose a suggestion or edit the captured text first."
         : unchanged
           ? "The proposed text is unchanged."
-          : "Replace the captured passage in Docs. Requires authorization and one unique match.";
+          : "Exorcise the captured passage in Docs. Requires authorization and one unique match.";
   }
 
   async function applyRevisionToDoc() {
@@ -428,7 +434,6 @@
 
     replacementRunning = true;
     app.source.disabled = true;
-    app.exorcism.disabled = true;
     updateReplaceButton();
     playSmokeEffect();
     setStatus("Replacing the captured passage if it has one unique match in the Doc…");
@@ -440,6 +445,7 @@
       capturedText = replaceResult;
       app.source.value = capturedText;
       lastOutput = capturedText;
+      renderRevision(lastOutput);
       replaceResult = "";
       hasReplaceResult = false;
       updateReplaceButton();
@@ -453,91 +459,7 @@
     } finally {
       replacementRunning = false;
       app.source.disabled = false;
-      app.exorcism.disabled = false;
       updateReplaceButton();
-    }
-  }
-
-  async function captureSelection() {
-    const previousCapturedText = capturedText;
-    const selectionBounds = getSelectionBounds();
-    capturedText = "";
-    capturedSelectionBounds = null;
-    replaceResult = "";
-    hasReplaceResult = false;
-    lastOutput = "";
-    app.copy.disabled = true;
-    app.output.textContent = "The results of my judgment shall appear here.";
-    updateReplaceButton();
-    let previousClipboardPromise;
-    try {
-      previousClipboardPromise = navigator.clipboard.readText().catch(() => null);
-    } catch {
-      previousClipboardPromise = Promise.resolve(null);
-    }
-    let copiedText = "";
-    const captureCopyEvent = (event) => {
-      try {
-        copiedText = event.clipboardData?.getData("text/plain") || "";
-      } catch {
-        copiedText = "";
-      }
-    };
-    document.addEventListener("copy", captureCopyEvent, true);
-    let execCopySucceeded = false;
-    try {
-      execCopySucceeded = document.execCommand("copy");
-    } catch {
-      execCopySucceeded = false;
-    } finally {
-      document.removeEventListener("copy", captureCopyEvent, true);
-    }
-    if (!execCopySucceeded) {
-      setStatus("Docs did not copy the selection. The document still has focus: press Ctrl+C or Command+C, then click the text box and paste.");
-      window.setMood("sad", { say: false });
-      return;
-    }
-    try {
-      let text = copiedText;
-      if (!text.trim()) {
-        const previousClipboard = await previousClipboardPromise;
-        for (let attempt = 0; attempt < 8; attempt += 1) {
-          await new Promise((resolve) => window.setTimeout(resolve, 100));
-          try {
-            const clipboardText = await navigator.clipboard.readText();
-            if (clipboardText.trim()
-              && clipboardText !== previousCapturedText
-              && (previousClipboard === null || clipboardText !== previousClipboard)) {
-              text = clipboardText;
-              break;
-            }
-          } catch {
-            break;
-          }
-        }
-      }
-      if (!text.trim()) throw new Error("Empty selection");
-      app.source.value = text;
-      capturedText = text;
-      capturedSelectionBounds = selectionBounds;
-      lastOutput = "";
-      replaceResult = "";
-      hasReplaceResult = false;
-      app.copy.disabled = true;
-      app.output.textContent = "The results of my judgment shall appear here.";
-      updateReplaceButton();
-      openFog.clear();
-      renderCursed();
-      setStatus("Selection captured. At last, evidence.");
-      noteActivity();
-    } catch {
-      setStatus("Docs did not provide new clipboard text. Keep the new text selected, press Ctrl+C or Command+C, then try the shortcut again—or paste it into the box.");
-      capturedText = "";
-      capturedSelectionBounds = null;
-      replaceResult = "";
-      hasReplaceResult = false;
-      updateReplaceButton();
-      window.setMood("sad", { say: false });
     }
   }
 
@@ -721,17 +643,13 @@
     });
     app.root.querySelector(".close-button").addEventListener("click", () => setPanelOpen(false));
     app.root.querySelector(".footer-close").addEventListener("click", () => setPanelOpen(false));
-    const captureButton = app.root.querySelector(".capture-button");
-    captureButton.addEventListener("pointerdown", (event) => {
-      if (event.button === 0) event.preventDefault();
-    });
-    captureButton.addEventListener("click", () => void captureSelection());
     app.source.addEventListener("input", () => {
       if (capturedText.trim()) {
         replaceResult = app.source.value;
         hasReplaceResult = true;
         lastOutput = replaceResult;
-        app.output.textContent = replaceResult || "The results of my judgment shall appear here.";
+        if (replaceResult) renderRevision(replaceResult);
+        else app.output.textContent = "The results of my judgment shall appear here.";
         app.copy.disabled = !lastOutput;
       } else {
         lastOutput = "";
@@ -753,7 +671,6 @@
       window.setTimeout(() => {
         if (!replacesWholePassage || !app.source.value.trim()) return;
         capturedText = app.source.value;
-        capturedSelectionBounds = null;
         replaceResult = "";
         hasReplaceResult = false;
         lastOutput = "";
@@ -762,12 +679,14 @@
         updateReplaceButton();
         openFog.clear();
         renderCursed();
-        setStatus("Pasted passage set as the new source. Edit it or choose a Cursed words action, then choose Replace in Doc.");
+        setStatus("Pasted passage set as the new source. Edit it or choose a Cursed words action, then choose Exorcise words.");
       }, 0);
     });
-    app.exorcism.addEventListener("click", () => void exorciseAll());
     app.copy.addEventListener("click", () => void copyOutput());
-    app.replace.addEventListener("click", () => void applyRevisionToDoc());
+    app.replace.addEventListener("click", () => {
+      playReplaceSound();
+      void applyRevisionToDoc();
+    });
     app.root.addEventListener("pointerdown", noteActivity, { passive: true });
   }
 
@@ -839,7 +758,8 @@
     app.panel.hidden = false;
     clearTrickTimer();
     window.setMood("mischievous");
-    void captureSelection();
+    setStatus("Paste your selected text here to begin.");
+    app.source.focus();
     return false;
   });
 

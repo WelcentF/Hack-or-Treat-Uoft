@@ -3,7 +3,7 @@
   "name": "Ghostwriter",
   "version": "1.0.0",
   "description": "A grumpy ghost editor haunting your Google Docs.",
-  "permissions": ["storage", "clipboardRead", "clipboardWrite", "activeTab", "identity"],
+  "permissions": ["storage", "clipboardWrite", "activeTab", "identity"],
   "host_permissions": ["https://docs.google.com/*", "https://docs.googleapis.com/*", "https://api.example.com/*"],
   "oauth2": {
     "client_id": "49547483074-mlqua88rf3vdl9b117qkakl30njj4dfr.apps.googleusercontent.com",
@@ -24,7 +24,7 @@
   "options_page": "src/options/options.html",
   "commands": {
     "open-writing-assistant": {
-      "description": "Summon Ghostwriter and capture selected text",
+      "description": "Summon Ghostwriter and paste selected text",
       "suggested_key": {
         "default": "Ctrl+Shift+Y",
         "mac": "Command+Shift+Y"
@@ -48,7 +48,8 @@
         "src/content/widget.css",
         "src/content/ghost.css",
         "assets/ghost/*.png",
-        "assets/effects/*.png"
+        "assets/effects/*.png",
+        "assets/sounds/ghost-woo.mp3"
       ],
       "matches": ["https://docs.google.com/*"]
     }

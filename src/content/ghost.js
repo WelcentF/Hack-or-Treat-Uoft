@@ -208,7 +208,7 @@
     const trails = document.createElement("span");
     trails.className = "trick-trails";
     trails.setAttribute("aria-hidden", "true");
-    for (let index = 0; index < 3; index += 1) {
+    for (let index = 0; index < 5; index += 1) {
       const trail = document.createElement("span");
       trail.className = `trick-trail trick-trail-${index}`;
       const image = document.createElement("img");
@@ -338,7 +338,8 @@
     currentMood = mood;
     window.clearTimeout(moodTimer);
     const trickClass = activeTrick?.element === ghost ? " trick-in-progress" : "";
-    ghost.className = `ghost mood-${mood}${trickClass}`;
+    const trailClass = ghost.classList.contains("trails-active") ? " trails-active" : "";
+    ghost.className = `ghost mood-${mood}${trickClass}${trailClass}`;
     ghost.dataset.mood = mood;
     ghost.style.setProperty("--mood-filter", FILTERS[mood] || "none");
 

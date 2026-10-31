@@ -1,8 +1,7 @@
-// Toggles the Docs widget and opens its personality/settings page.
+// Connects Google Docs and controls the widget and its continuous-flight trick.
 
 const toggleButton = document.querySelector("#toggle");
 const trickButton = document.querySelector("#trick");
-const optionsButton = document.querySelector("#options");
 const connectButton = document.querySelector("#connect");
 const status = document.querySelector("#status");
 let enabled = true;
@@ -80,12 +79,6 @@ trickButton.addEventListener("click", async () => {
   } finally {
     render();
   }
-});
-
-optionsButton.addEventListener("click", () => {
-  void chrome.runtime.openOptionsPage().catch(() => {
-    status.textContent = "The settings lair will not open. Try the extension's Options menu.";
-  });
 });
 
 connectButton.addEventListener("click", () => {
